@@ -4,7 +4,7 @@ class Game:
     def __init__(self, size = 9, pool = 27):
         self.__size = size
         self.__board = [[-1 for _ in range(size)] for _ in range(size)]
-        self.__preBoard = [[1 for _ in range(size)] for _ in range(size)]
+        self.__preBoard = [[1 for _ in range(size)] for _ in range(4)]
         self.__pool = [pool]*4
         self.__moveList = [set(),set(),set(),set()]
         
@@ -100,16 +100,16 @@ class Game:
     def moveFromPreBoard(self,pl,x,y,dx,dy):
         self.__preBoard[pl][x]=0
         self.__moveList[pl].remove((x,y))
-        absP = self.relToAbs(self,pl,x+dx,y+dy)
+        absP = self.relToAbs(pl,x+dx,y+dy)
         self.__board[absP[0]][absP[1]]=pl
-        self.__moveList[pl].add(x+dx,y+dy)
+        self.__moveList[pl].add((x+dx,y+dy))
     def moveOnBoard(self,pl,x,y,dx,dy):
         abs1 = self.relToAbs(pl,x,y)
         self.__board[abs1[0]][abs1[1]]=-1
         self.__moveList[pl].remove((x,y))
-        absP = self.relToAbs(self,pl,x+dx,y+dy)
+        absP = self.relToAbs(pl,x+dx,y+dy)
         self.__board[absP[0]][absP[1]]=pl
-        self.__moveList[pl].add(x+dx,y+dy)
+        self.__moveList[pl].add((x+dx,y+dy))
     def checkMovesFromCoordinates(self,pl,x,y):
         moves = {"move":[],"capture":[],"jump":[]}
         for i in [-1,0,1]:
@@ -126,9 +126,10 @@ class Game:
                     continue
                 if y+2>8 or self.__board[abs2[0]][abs2[1]]==-1:
                     moves["jump"].append((2*i,2))
-                    nextJumps = self.checkMovesFromCoordinates(pl,x+2*i,y+2)[2]
+                    nextJumps = self.checkMovesFromCoordinates(pl,x+2*i,y+2)["jump"]
                     for jump in nextJumps:
                         moves["jump"].append((jump[0]+2*i,jump[1]+2))
+        return moves
     def checkMovesAll(self,pl):
         moves = []
         for piece in self.__moveList[pl]:
@@ -145,7 +146,7 @@ class Game:
             chosenMoveType = []
             moveTypes = ["jump","capture","move"]
             while len(chosenMoveType) == 0:
-                chosenMoveType = chosenPiece[1][moveTypes[r.randint(0,len(moveTypes[1])-1)]]
+                chosenMoveType = chosenPiece[1][moveTypes[r.randint(0,len(moveTypes)-1)]]
             if chosenMoveType == chosenPiece[1]["capture"]:
                 capture = 1
             chosenElement = chosenMoveType[r.randint(0,len(chosenMoveType)-1)]
@@ -178,7 +179,7 @@ class Game:
                 self.__moveList[targetpl].remove(self.absToRel(targetpl,targetCell[0],targetCell[1]))
             
             if move[1][1]+move[2][1]>8:
-                self.__moveList[player].remove(move[2])
+                self.__moveList[player].remove(move[1])
                 self.__board[move[1][0]][move[1][1]]=-1
                 self.__score[player]+=1
             elif move[1][1]==-1:
@@ -191,7 +192,32 @@ class Game:
             self.__turn+=1
             return -1
         
-        move = self.chooseMove("altpremove",player,pmoves,avoid)
+        move = self.chooseMove("premove",player,pmoves)
         self.premove(player,move)
         self.__turn += 1
         return 0
+    
+    def write(self):
+        s=[]
+        for i in range(3):
+            s.append([" "," "," "]+["." for i in range(self.__size)]+[" "," "," "])
+        for i in range(self.__size):
+            s.append(["." for i in range(self.__size+6)])
+        for i in range(3):
+            s.append([" "," "," "]+["." for i in range(self.__size)]+[" "," "," "])
+        
+        chars = ["$","&","#","@"]
+        for pl in range(4):
+            for i in range(self.__size):
+                if self.__preBoard[pl][i]==0:
+                    continue
+                pos = self.relToAbs(pl,i,self.__preBoard[pl][i]-4)
+                s[pos[0]+3][pos[1]+3]=chars[pl]
+        
+        for x in range(self.__size):
+            for y in range(self.__size):
+                if self.__board[x][y]==-1:
+                    continue
+                s[x+3][y+3]=chars[self.__board[x][y]]
+        
+        return '\n'.join([''.join(s[i]) for i in range(self.__size+6)])
