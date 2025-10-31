@@ -107,6 +107,7 @@ def choosepremove(pl,m,avoid):
     while res==avoid:
         res = m[r.randint(0,len(m)-1)]
     return res
+
 def game():
     global b 
     b = [[-1 for _ in range(9)] for _ in range(9)]
@@ -120,6 +121,8 @@ def game():
     score = [0]*4
     turn = 0
     passedTurns=0
+
+
     while passedTurns<4:
         moves = checkMovesAll(turn%4)
         avoid = -1
