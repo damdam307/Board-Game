@@ -1,10 +1,5 @@
 import random as r
 
-b = [[-1 for _ in range(9)] for _ in range(9)]
-p = [[1 for _ in range(9)] for _ in range(4)]
-l = [set(),set(),set(),set()]
-pool = [27]*4
-score = [0]*4
 
 def getPos(pl,x,y,dx,dy):
     match pl:
@@ -16,6 +11,20 @@ def getPos(pl,x,y,dx,dy):
             return ((8-x)-dx,(8-y)-dy)
         case 3:
             return ((8-y)-dy,x+dx)
+
+def getPosInverse(pl, pos):
+    # Given board coordinates in pos tuple, returns player-relative coordinates
+    # Assuming dx=0, dy=0
+    match pl:
+        case 0:
+            return (pos[0], pos[1])  # No transformation needed for player 0
+        case 1:
+            return (8-pos[1], pos[0])  # Rotate 90° clockwise
+        case 2:
+            return (8-pos[0], 8-pos[1])  # Rotate 180°
+        case 3:
+            return (pos[1], 8-pos[0])  # Rotate 90° counterclockwise
+
 
 def premove(pl,x):
     if p[pl][x] == 0:
@@ -60,7 +69,9 @@ def checkMovesSingle(pl,x,y):
                 continue
             if y+2>8 or b[t1[0]][t1[1]]==-1:
                 m[2].append((2*i,2))
-                m[2]+=checkMovesSingle(pl,x+2*i,y+2)[2]
+                liss = checkMovesSingle(pl,x+2*i,y+2)[2]
+                for ee in liss:
+                    m[2].append((ee[0]+2*i,ee[1]+2))
     return m
 
 def checkMovesAll(pl):
@@ -74,7 +85,7 @@ def checkMovesAll(pl):
 def checkPremoves(pl):
     m = []
     for x in range(9):
-        if pool!=0 or (p[pl][x] in [1,2]):
+        if pool[pl]!=0 or (p[pl][x] in [1,2]):
             m.append(x)
     return m
 
@@ -96,38 +107,59 @@ def choosepremove(pl,m,avoid):
     while res==avoid:
         res = m[r.randint(0,len(m)-1)]
     return res
-
-turn = 0
-passedTurns=0
-while passedTurns<4:
-    moves = checkMovesAll(turn%4)
-    avoid = -1
-    if len(moves)==0:
+def game():
+    global b 
+    b = [[-1 for _ in range(9)] for _ in range(9)]
+    global p 
+    p = [[1 for _ in range(9)] for _ in range(4)]
+    global l
+    l = [set(),set(),set(),set()]
+    global pool
+    pool= [27]*4
+    global score
+    score = [0]*4
+    turn = 0
+    passedTurns=0
+    while passedTurns<4:
+        moves = checkMovesAll(turn%4)
+        avoid = -1
+        if len(moves)==0:
+            pmoves = checkPremoves(turn%4)
+            if len(pmoves)==0:
+                passedTurns+=1
+                turn+=1
+                continue
+            avoid = choosepremove(turn%4,pmoves,avoid)
+            premove(turn%4,avoid)
+        else:
+            mm = choosemove(turn%4,moves)
+            if mm[0]==1:
+                for ll in range(4):
+                    l[ll].discard(getPosInverse(ll,getPos(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1])))
+            if mm[1][0][1]+mm[1][1][1]>8:
+                l[turn%4].remove((mm[1][0][0],mm[1][0][1]))
+                b[mm[1][0][0]][mm[1][0][1]]=-1
+                score[turn%4]+=1
+            elif mm[1][0][1]==-1:
+                moveFromPre(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1])
+            else:
+                moveOnBoard(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1])
         pmoves = checkPremoves(turn%4)
         if len(pmoves)==0:
-            passedTurns+=1
             turn+=1
             continue
         avoid = choosepremove(turn%4,pmoves,avoid)
         premove(turn%4,avoid)
-    else:
-        mm = choosemove(turn%4,moves)
-        if mm[0]==1:
-            for ll in l:
-                ll.discard(getPos(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1]))
-        if mm[1][0][1]==-1:
-            moveFromPre(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1])
-        elif mm[1][0][1]+mm[1][1][1]>8:
-            l[turn%4].remove((mm[1][0][0],mm[1][0][1]))
-            b[mm[1][0][0]][mm[1][0][1]]=-1
-            score[turn%4]+=1
-        else:
-            moveOnBoard(turn%4,mm[1][0][0],mm[1][0][1],mm[1][1][0],mm[1][1][1])
-    pmoves = checkPremoves(turn%4)
-    if len(pmoves)==0:
         turn+=1
-        continue
-    avoid = choosepremove(turn%4,pmoves,avoid)
-    premove(turn%4,avoid)
-    turn+=1
-    print(pool,end='\r')
+        #print(score,end='\r')
+    #print()
+    return score
+
+s = [0,0,0,0]
+for i in range(10000):
+    a = game()
+    s[0]+=a[0]
+    s[1]+=a[1]
+    s[2]+=a[2]
+    s[3]+=a[3]
+print(s)
