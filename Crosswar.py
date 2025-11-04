@@ -42,25 +42,23 @@ class Game:
         self.__passedTurns=settings["passedturns"]
 
     def relToAbs(self,pl,x,y):
-        match pl:
-            case 0:
-                return (x,y)
-            case 1:
-                return (y,self.__size-1-x)
-            case 2:
-                return (self.__size-1-x,self.__size-1-y)
-            case 3:
-                return (self.__size-1-y,x)
+        if pl == 0:
+            return (x,y)
+        if pl == 1:
+            return (y,self.__size-1-x)
+        if pl == 2:
+            return (self.__size-1-x,self.__size-1-y)
+        if pl == 3:
+            return (self.__size-1-y,x)
     def absToRel(self,pl,x,y):
-        match pl:
-            case 0:
-                return (x,y)
-            case 1:
-                return (self.__size-1-y,x)
-            case 2:
-                return (self.__size-1-x,self.__size-1-y)
-            case 3:
-                return (y,self.__size-1-x)
+        if pl == 0:
+            return (x,y)
+        if pl == 1:
+            return (self.__size-1-y,x)
+        if pl == 2:
+            return (self.__size-1-x,self.__size-1-y)
+        if pl == 3:
+            return (y,self.__size-1-x)
     
     def getSize(self):
         return self.__size
@@ -176,25 +174,26 @@ class Game:
             if move[0]==1:
                 targetCell = self.relToAbs(player,move[1][0]+move[2][0],move[1][1]+move[2][1])
                 targetpl = self.__board[targetCell[0]][targetCell[1]]
-                self.__moveList[targetpl].remove(self.absToRel(targetpl,targetCell[0],targetCell[1]))
-            
+                self.__moveList[targetpl].remove(self.absToRel(targetpl,targetCell[0],targetCell[1])) 
             if move[1][1]+move[2][1]>8:
                 self.__moveList[player].remove(move[1])
-                self.__board[move[1][0]][move[1][1]]=-1
+                abs1 = self.relToAbs(player,move[1][0],move[1][1])
+                self.__board[abs1[0]][abs1[1]]=-1
                 self.__score[player]+=1
             elif move[1][1]==-1:
                 self.moveFromPreBoard(player,move[1][0],move[1][1],move[2][0],move[2][1])
             else:
                 self.moveOnBoard(player,move[1][0],move[1][1],move[2][0],move[2][1])
-        
         pmoves = self.checkValidPremoves(player,avoid)
         if len(pmoves)==0:
             self.__turn+=1
+            self.__passedTurns = 0
             return -1
         
         move = self.chooseMove("premove",player,pmoves)
         self.premove(player,move)
         self.__turn += 1
+        self.__passedTurns = 0
         return 0
     
     def write(self):
@@ -220,4 +219,4 @@ class Game:
                     continue
                 s[x+3][y+3]=chars[self.__board[x][y]]
         
-        return '\n'.join([''.join(s[i]) for i in range(self.__size+6)])
+        return '\n'.join([''.join(s[i]) for i in range(self.__size+6)]) + str(self.__turn)
