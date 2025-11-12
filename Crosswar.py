@@ -177,8 +177,11 @@ class Game:
                 self.__moveList[targetpl].remove(self.absToRel(targetpl,targetCell[0],targetCell[1])) 
             if move[1][1]+move[2][1]>8:
                 self.__moveList[player].remove(move[1])
-                abs1 = self.relToAbs(player,move[1][0],move[1][1])
-                self.__board[abs1[0]][abs1[1]]=-1
+                if move[1][1]==-1:
+                    self.__preBoard[player][move[1][0]]=0
+                else:
+                    abs1 = self.relToAbs(player,move[1][0],move[1][1])
+                    self.__board[abs1[0]][abs1[1]]=-1
                 self.__score[player]+=1
             elif move[1][1]==-1:
                 self.moveFromPreBoard(player,move[1][0],move[1][1],move[2][0],move[2][1])
