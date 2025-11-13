@@ -1,4 +1,5 @@
 import random as r
+import copy
 
 class Game:
     def __init__(self, size = 9, pool = 27):
@@ -20,7 +21,7 @@ class Game:
             "movelist":self.__moveList,
             "score":self.__score,
             "turn":self.__turn,
-            "passedturn":self.__passedTurns
+            "passedturns":self.__passedTurns
         }
     def importGame(self,settings):
         self.__size=settings["size"]
@@ -33,11 +34,11 @@ class Game:
         self.__passedTurns=settings["passedturns"]
     def importGameCopy(self,settings):
         self.__size=settings["size"]
-        self.__board=settings["board"].copy()
-        self.__preBoard=settings["preboard"].copy()
-        self.__pool=settings["pool"].copy()
-        self.__moveList=settings["movelist"].copy()
-        self.__score=settings["score"].copy()
+        self.__board=copy.deepcopy(settings["board"])
+        self.__preBoard=copy.deepcopy(settings["preboard"])
+        self.__pool=copy.deepcopy(settings["pool"])
+        self.__moveList=copy.deepcopy(settings["movelist"])
+        self.__score=copy.deepcopy(settings["score"])
         self.__turn=settings["turn"]
         self.__passedTurns=settings["passedturns"]
 
@@ -74,6 +75,8 @@ class Game:
         return self.__moveList
     def getTurn(self):
         return self.__turn
+    def getPassedTurns(self):
+        return self.__passedTurns
     
     def premove(self,pl,x):
         if self.__preBoard[pl][x] == 0:
@@ -198,7 +201,51 @@ class Game:
         self.__turn += 1
         self.__passedTurns = 0
         return 0
-    
+    def advanceWithChosenMoves(self, chosenMove):
+        player = self.__turn%4
+        if self.__passedTurns>=4:
+            return (1,-1)        
+        avoid = -1
+
+        if chosenMove["type"]=="move":
+            move = chosenMove["move"]
+            if move[0]==1:
+                targetCell = self.relToAbs(player,move[1][0]+move[2][0],move[1][1]+move[2][1])
+                targetpl = self.__board[targetCell[0]][targetCell[1]]
+                self.__moveList[targetpl].remove(self.absToRel(targetpl,targetCell[0],targetCell[1]))
+            if move[1][1]+move[2][1]>8:
+                self.__moveList[player].remove(move[1])
+                if move[1][1]==-1:
+                    self.__preBoard[player][move[1][0]]=0
+                else:
+                    abs1 = self.relToAbs(player,move[1][0],move[1][1])
+                    self.__board[abs1[0]][abs1[1]]=-1
+                self.__score[player]+=1
+            elif move[1][1]==-1:
+                self.moveFromPreBoard(player,move[1][0],move[1][1],move[2][0],move[2][1])
+            else:
+                self.moveOnBoard(player,move[1][0],move[1][1],move[2][0],move[2][1])
+            self.__passedTurns = 0
+            return (0,-1)
+        elif chosenMove["type"]=="altpremove":
+            if chosenMove["move"]==None:
+                self.__passedTurns+=1
+                self.__turn+=1
+                return (-2,-1)
+            move = chosenMove["move"]
+            self.premove(player,move)
+            avoid = move
+            return (0,avoid)
+        elif chosenMove["type"]=="premove":
+            if chosenMove["move"]==None:
+                self.__turn+=1
+                return (-1,-1)
+            move = chosenMove["move"]
+            self.premove(player,move)
+            self.__turn += 1
+            self.__passedTurns = 0
+            return 0
+
     def write(self):
         s=[]
         for i in range(3):

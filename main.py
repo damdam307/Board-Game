@@ -1,5 +1,4 @@
 import Crosswar as c
-import time
 l = '\r'+'\033[1A'*15
 #print('\n'*15)
 s = [0,0,0,0]
