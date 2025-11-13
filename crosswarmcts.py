@@ -26,7 +26,7 @@ class CrossWarBoard(_CWB, Node):
                 newBoard = Crosswar.Game()
                 newBoard.importGameCopy(settings)
                 newBoard.advanceWithChosenMoves({"type":"altpremove","move":None})
-                is_terminal = (board.getPassedTurns()>=4)
+                is_terminal = (board.current.getPassedTurns()>=4)
                 winner = None
                 if is_terminal:
                     scores = newBoard.getScore()
