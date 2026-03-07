@@ -121,7 +121,7 @@ class CrossWarBoard(_CWB, Node):
         return movel
 
     def to_pretty_string(board):
-        return board.current.write()
+        return board.current.to_pretty_string()
 
 
 def play_game():

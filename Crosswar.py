@@ -246,7 +246,7 @@ class Game:
             self.__passedTurns = 0
             return 0
 
-    def write(self):
+    def to_pretty_string(self):
         s=[]
         for i in range(3):
             s.append([" "," "," "]+["." for i in range(self.__size)]+[" "," "," "])
