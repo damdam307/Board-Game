@@ -1,8 +1,13 @@
 import numpy as np
 from collections import defaultdict
+import copy
+import CrosswarNp
 
 class MonteCarloTreeSearchNode():
-    def __init__(self, state, parent=None, parent_action=None):
+    boardClass = CrosswarNp.CrosswarBase
+
+    def __init__(self, state, parent=None, parent_action=None, board = CrosswarNp.CrosswarBase):
+        boardClass = board
         self.state = state
         self.parent = parent
         self.parent_action = parent_action
@@ -39,10 +44,11 @@ class MonteCarloTreeSearchNode():
         return child_node 
 
     def is_terminal_node(self):
-        return self.state.is_game_over()
+        return self.is_game_over()
 
     def rollout(self):
         current_rollout_state = self.state
+        player = self.state.getTurn()
         
         while not current_rollout_state.is_game_over():
             
@@ -50,7 +56,7 @@ class MonteCarloTreeSearchNode():
             
             action = self.rollout_policy(possible_moves)
             current_rollout_state = current_rollout_state.move(action)
-        return current_rollout_state.game_result()
+        return current_rollout_state.game_result(player)
 
     def backpropagate(self, result):
         self._number_of_visits += 1.
@@ -94,43 +100,26 @@ class MonteCarloTreeSearchNode():
         return self.best_child(c_param=0.)
 
     def get_legal_actions(self): 
-        '''
-        Modify according to your game or
-        needs. Constructs a list of all
-        possible actions from current state.
-        Returns a list.
-        '''
-
+        return self.state.checkMovesAll(self.state.getTurn())
+        
     def is_game_over(self):
-        '''
-        Modify according to your game or 
-        needs. It is the game over condition
-        and depends on your game. Returns
-        true or false
-        '''
+        return self.state.getPassedTurns()>=4
 
-    def game_result(self):
-        '''
-        Modify according to your game or 
-        needs. Returns 1 or 0 or -1 depending
-        on your state corresponding to win,
-        tie or a loss.
-        '''
+    def game_result(self,player):
+        scores = self.state.getScore()
+        if max(scores) == scores[player]:
+            if scores.count(scores[player]) == 1:
+                return 1
+            else:
+                return 0
+        else:
+            return -1
 
     def move(self,action):
-        '''
-        Modify according to your game or 
-        needs. Changes the state of your 
-        board with a new value. For a normal
-        Tic Tac Toe game, it can be a 3 by 3
-        array with all the elements of array
-        being 0 initially. 0 means the board 
-        position is empty. If you place x in
-        row 2 column 3, then it would be some 
-        thing like board[2][3] = 1, where 1
-        represents that x is placed. Returns 
-        the new state after making a move.
-    '''
+        next_state = copy.deepcopy(self.state)
+        next_state.move(action)
+        return next_state
+
 
 def main():
     root = MonteCarloTreeSearchNode(state = initial_state)
