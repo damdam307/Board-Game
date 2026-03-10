@@ -1,4 +1,5 @@
-import Crosswar as c
+import CrosswarNp as c
+import MCts as mcts
 import time as t
 import argparse
 
@@ -14,15 +15,16 @@ number = args.number
 prt = args.prt
 
 l = '\r'+'\033[1A'*16
-if prt: print('\n'*16)
+if prt: print('\n'*17)
 s = [0,0,0,0]
 for i in range(number):
     print(i,end='\r')
-    g = c.Game()
-    while g.advanceGame() != 1:
-        if prt: print(l+g.to_pretty_string())
+    g = mcts.MonteCarloTreeSearchNode(c.CrosswarBase())
+    while not g.is_game_over():
+        if prt: print(l+g.state.to_pretty_string())
         if time != 0: t.sleep(time)
-    a = g.getScore()
+        g = g.best_action()
+    a = g.state.getScore()
     s[0]+=a[0]
     s[1]+=a[1]
     s[2]+=a[2]

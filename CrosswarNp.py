@@ -1,5 +1,6 @@
 import random as r
 import numpy as np
+import copy
 
 class CrosswarBase:
     def __init__(self, size = 9, pool = 27, board = [], score = np.array([0]*4), turn = 1, stage = "move", passedTurns = 0, avoid = -1):
@@ -68,8 +69,9 @@ class CrosswarBase:
             self.__board = np.rot90(self.__board,-1)
             self.__stage = "move"
             self.__turn = self.__turn%4 + 1
+        return self
 
-    def checkJumps(self,pl,x,y):
+    def get_jumps(self,pl,x,y):
         moves = []
         if y>=self.__size+3: return [(-1,-1)]
         for i in [-1,0,1]:
@@ -79,10 +81,11 @@ class CrosswarBase:
             if self.__board[y+2,x+2*i] != 0: continue
             
             moves.append((x+2*i,y+2))
-            moves += self.checkJumps(pl,x+2*i,y+2)
+            moves += self.get_jumps(pl,x+2*i,y+2)
         return moves
     
-    def checkMovesAll(self,pl):
+    def get_legal_actions(self):
+        pl = self.getTurn()
         moves = []
         if self.__stage == "premove":
             pos = np.zeros(self.__size)
@@ -95,7 +98,6 @@ class CrosswarBase:
             for i in range(self.__size):
                 if pos[i]==0 and self.__pool[pl] != 0:
                      moves.append((-1,-1,0,i))
-            moves = np.array(moves)
         elif self.__stage == "move":
             moves = []
             for y in range(3,self.__size+3):
@@ -105,7 +107,7 @@ class CrosswarBase:
                         if x+i>=self.__size+3 or x+i<3: continue
                         if y+1>=self.__size+3: moves.append((y,x,-1,-1))
                         else: moves.append((y,x,y+1,x+i))
-                    jmoves = self.checkJumps(pl,x,y)
+                    jmoves = self.get_jumps(pl,x,y)
                     for jump in jmoves: moves.append((y,x,jump[0],jump[1]))
             if len(moves) == 0:
                 self.__stage == "altpremove"
@@ -120,9 +122,23 @@ class CrosswarBase:
                 for i in range(self.__size):
                     if pos[i]==0 and self.__pool[pl] != 0:
                         moves.append((-1,-1,0,i))
-        moves = np.array(list(set(moves)))
-        if len(moves == 0): moves = np.array([(-1,-1,-1,-1)])
+        moves = list(set(moves))
+        if len(moves) == 0: moves = [(-1,-1,-1,-1)]
         return moves
+
+    def is_game_over(self):
+        return self.state.getPassedTurns()>=4
+
+    def game_result(self):
+        scores = self.__score()
+        m = np.max(scores)
+        i = np.argmax(scores)
+        result = []
+        while scores[i]==m:
+            result.append(i)
+            scores[i]=-1
+            i = np.argmax(scores)
+        return np.array(result)
 
     def to_pretty_string(self):
         s=[]

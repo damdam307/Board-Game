@@ -7,7 +7,7 @@ class MonteCarloTreeSearchNode():
     boardClass = CrosswarNp.CrosswarBase
 
     def __init__(self, state, parent=None, parent_action=None, board = CrosswarNp.CrosswarBase):
-        boardClass = board
+        boardClass = board        
         self.state = state
         self.parent = parent
         self.parent_action = parent_action
@@ -29,9 +29,9 @@ class MonteCarloTreeSearchNode():
         wins = self._results[1]
         loses = self._results[-1]
         return wins - loses
-    
+
     def n(self):
-        return self._number_of_visits   
+        return self._number_of_visits
 
     def expand(self):
         
@@ -44,11 +44,10 @@ class MonteCarloTreeSearchNode():
         return child_node 
 
     def is_terminal_node(self):
-        return self.is_game_over()
+        return self.state.is_game_over()
 
     def rollout(self):
         current_rollout_state = self.state
-        player = self.state.getTurn()
         
         while not current_rollout_state.is_game_over():
             
@@ -56,7 +55,7 @@ class MonteCarloTreeSearchNode():
             
             action = self.rollout_policy(possible_moves)
             current_rollout_state = current_rollout_state.move(action)
-        return current_rollout_state.game_result(player)
+        return current_rollout_state.game_result()
 
     def backpropagate(self, result):
         self._number_of_visits += 1.
@@ -98,30 +97,3 @@ class MonteCarloTreeSearchNode():
             v.backpropagate(reward)
         
         return self.best_child(c_param=0.)
-
-    def get_legal_actions(self): 
-        return self.state.checkMovesAll(self.state.getTurn())
-        
-    def is_game_over(self):
-        return self.state.getPassedTurns()>=4
-
-    def game_result(self,player):
-        scores = self.state.getScore()
-        if max(scores) == scores[player]:
-            if scores.count(scores[player]) == 1:
-                return 1
-            else:
-                return 0
-        else:
-            return -1
-
-    def move(self,action):
-        next_state = copy.deepcopy(self.state)
-        next_state.move(action)
-        return next_state
-
-
-def main():
-    root = MonteCarloTreeSearchNode(state = initial_state)
-    selected_node = root.best_action()
-    return 
