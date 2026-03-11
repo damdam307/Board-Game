@@ -20,7 +20,7 @@ s = [0,0,0,0]
 for i in range(number):
     print(i,end='\r')
     g = mcts.MonteCarloTreeSearchNode(c.CrosswarBase())
-    while not g.is_game_over():
+    while not g.state.is_game_over():
         if prt: print(l+g.state.to_pretty_string())
         if time != 0: t.sleep(time)
         g = g.best_action()
