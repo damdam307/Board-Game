@@ -8,7 +8,7 @@ class CrosswarBase:
         
         self.__pool = np.array([pool]*4)        
         
-        self.__board = np.zeros(shape = (size+6,size+6))
+        self.__board = np.zeros(shape = (size+6,size+6),dtype = np.int8)
         if len(board) == 0:        
             for i in range(3,size+3):
                 self.__board[0,i] = 1
@@ -44,7 +44,7 @@ class CrosswarBase:
         player = self.__turn
         if self.__stage == "move":
             self.__board[action[0],action[1]] = 0
-            if(action[2] == -1): self.__score[player] += 1
+            if(action[2] == -1): self.__score[player-1] += 1
             else: self.__board[action[2],action[3]] = player
             self.__stage = "premove"
             self.__passedTurns = 0
@@ -63,7 +63,7 @@ class CrosswarBase:
                 self.__stage = "premove"
                 self.avoid = action[3]
         else:
-            if action[0] == -1: self.__pool[player] -= 1
+            if action[0] == -1: self.__pool[player-1] -= 1
             else: self.__board[action[0],action[1]] = 0
             self.__board[action[2],action[3]] = player
             self.__board = np.rot90(self.__board,-1)
@@ -96,7 +96,7 @@ class CrosswarBase:
                         moves.append((y,x,y+1,x))
             if self.__avoid == -1: pos[self.__avoid] = 4
             for i in range(self.__size):
-                if pos[i]==0 and self.__pool[pl] != 0:
+                if pos[i]==0 and self.__pool[pl-1] != 0:
                      moves.append((-1,-1,0,i))
         elif self.__stage == "move":
             moves = []
@@ -120,14 +120,14 @@ class CrosswarBase:
                             moves.append((y,x,y+1,x))
                 if self.__avoid == -1: pos[self.__avoid] = 4
                 for i in range(self.__size):
-                    if pos[i]==0 and self.__pool[pl] != 0:
+                    if pos[i]==0 and self.__pool[pl-1] != 0:
                         moves.append((-1,-1,0,i))
         moves = list(set(moves))
         if len(moves) == 0: moves = [(-1,-1,-1,-1)]
         return moves
 
     def is_game_over(self):
-        return self.state.getPassedTurns()>=4
+        return self.__passedTurns>=4
 
     def game_result(self):
         scores = self.__score()
