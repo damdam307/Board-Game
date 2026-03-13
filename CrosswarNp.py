@@ -22,6 +22,7 @@ class CrosswarBase:
         self.__stage = stage
         self.__passedTurns = passedTurns
         self.__avoid = avoid
+        self.__turnum = 0
 
     def getSize(self):
         return self.__size
@@ -55,20 +56,28 @@ class CrosswarBase:
                 self.__stage = "move"
                 self.__turn = self.__turn%4 + 1
                 self.__board = np.rot90(self.__board,-1)
-            else:
-                if action[0] == -1: self.__pool[player] -= 1
-                else: self.__board[action[0],action[1]] = 0
-                self.__board[action[2],action[3]] = player
-                self.__passedTurns = 0
-                self.__stage = "premove"
-                self.avoid = action[3]
+                return self
+            
+            if action[0] == -1: self.__pool[player-1] -= 1
+            else: self.__board[action[0],action[1]] = 0
+            self.__board[action[2],action[3]] = player
+            self.__passedTurns = 0
+            self.__stage = "premove"
+            self.avoid = action[3]
         else:
+            if(action[2] == -1): 
+                self.__stage = "move"
+                self.__turn = self.__turn%4 + 1
+                self.__board = np.rot90(self.__board,-1)
+                return self
+            
             if action[0] == -1: self.__pool[player-1] -= 1
             else: self.__board[action[0],action[1]] = 0
             self.__board[action[2],action[3]] = player
             self.__board = np.rot90(self.__board,-1)
             self.__stage = "move"
             self.__turn = self.__turn%4 + 1
+        self.__turnum+=1   
         return self
 
     def get_jumps(self,pl,x,y):
@@ -78,9 +87,10 @@ class CrosswarBase:
             if x+i>=self.__size+3 or x+i<3: continue
             if self.__board[y+1,x+i] == 0: continue
             if x+2*i>=self.__size+3 or x+2*i<3: continue
+            if y+2>=self.__size+3: continue
             if self.__board[y+2,x+2*i] != 0: continue
             
-            moves.append((x+2*i,y+2))
+            moves.append((y+2,x+2*i))
             moves += self.get_jumps(pl,x+2*i,y+2)
         return moves
     
@@ -88,16 +98,17 @@ class CrosswarBase:
         pl = self.getTurn()
         moves = []
         if self.__stage == "premove":
-            pos = np.zeros(self.__size)
+            pos = np.full(self.__size,-1)
             for y in range(3):
                 for x in range(3,self.__size+3):
-                    pos[y-3] = y
-                    if self.__board[y,x] == 0 and x != self.__avoid:
+                    if self.__board[y,x] == 0: continue
+                    pos[x-3] = y
+                    if self.__board[y+1,x] == 0 and x != self.__avoid:
                         moves.append((y,x,y+1,x))
             if self.__avoid == -1: pos[self.__avoid] = 4
             for i in range(self.__size):
-                if pos[i]==0 and self.__pool[pl-1] != 0:
-                     moves.append((-1,-1,0,i))
+                if pos[i]==-1 and self.__pool[pl-1] != 0:
+                     moves.append((-1,-1,0,i+3))
         elif self.__stage == "move":
             moves = []
             for y in range(3,self.__size+3):
@@ -110,18 +121,19 @@ class CrosswarBase:
                     jmoves = self.get_jumps(pl,x,y)
                     for jump in jmoves: moves.append((y,x,jump[0],jump[1]))
             if len(moves) == 0:
-                self.__stage == "altpremove"
-                pos = np.zeros(self.__size)
+                self.__stage = "altpremove"
+                pos = np.full(self.__size,-1)
                 moves = []
                 for y in range(3):
                     for x in range(3,self.__size+3):
-                        pos[y-3] = y
-                        if self.__board[y,x] == 0 and x != self.__avoid:
+                        if self.__board[y,x] == 0: continue
+                        pos[x-3] = y
+                        if self.__board[y+1,x] == 0 and x != self.__avoid:
                             moves.append((y,x,y+1,x))
                 if self.__avoid == -1: pos[self.__avoid] = 4
                 for i in range(self.__size):
-                    if pos[i]==0 and self.__pool[pl-1] != 0:
-                        moves.append((-1,-1,0,i))
+                    if pos[i]==-1 and self.__pool[pl-1] != 0:
+                        moves.append((-1,-1,0,i+3))
         moves = list(set(moves))
         if len(moves) == 0: moves = [(-1,-1,-1,-1)]
         return moves
@@ -130,7 +142,7 @@ class CrosswarBase:
         return self.__passedTurns>=4
 
     def game_result(self):
-        scores = self.__score()
+        scores = copy.deepcopy(self.__score)
         m = np.max(scores)
         i = np.argmax(scores)
         result = []
@@ -150,7 +162,7 @@ class CrosswarBase:
             s.append([" "," "," "]+["." for i in range(self.__size)]+[" "," "," "])
         
         chars = ["$","&","#","@"]
-        board = np.rot90(self.__board,-(self.__turn-1))
+        board = np.rot90(self.__board,(self.__turn-1))
         for x in range(self.__size+6):
             for y in range(self.__size+6):
                 if board[x][y]==0: continue
